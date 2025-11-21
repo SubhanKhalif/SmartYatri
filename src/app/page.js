@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image"; // Import Next Image
 
 // Responsive navigation - open/close mobile nav
 export default function HomePage() {
@@ -32,7 +33,14 @@ export default function HomePage() {
       {/* Header */}
       <header className="w-full max-w-[100vw] px-4 sm:px-6 md:px-12 py-3 flex items-center justify-between bg-white/70 shadow-lg backdrop-blur-2xl sticky top-0 z-30 border-b border-blue-200/40">
         <div className="flex items-center gap-2 md:gap-4">
-          <img src="/bus-logo.png" alt="Bus Logo" className="w-9 h-9 sm:w-10 sm:h-10 drop-shadow-md" />
+          <Image
+            src="/bus-logo.png"
+            alt="Bus Logo"
+            className="w-9 h-9 sm:w-10 sm:h-10 drop-shadow-md"
+            width={40}
+            height={40}
+            priority
+          />
           <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-800 tracking-tight font-sans select-none">
             SmartYatri
           </span>
