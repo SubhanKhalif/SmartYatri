@@ -1,36 +1,20 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## SmartYatri – Streamlined Bus Ticket and Pass Management
 
-## Getting Started
+SmartYatri is a comprehensive platform designed to efficiently manage bus ticketing and pass bookings, providing users with a reliable and seamless travel planning experience. Whether you are a daily commuter, a student, or an organizational administrator, SmartYatri offers robust tools to facilitate and enhance transit operations.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Efficient Ticket Booking**: Search available routes, verify seat availability, and book tickets quickly and securely.
+- **Comprehensive Pass Management**: Issue, renew, and monitor bus passes using a unified interface.
+- **Live Transit Updates**: Access up-to-date information on schedules, route changes, and delays.
+- **Secure Payment Processing**: Utilize trusted and secure online payment gateways for all transactions.
+- **Intuitive User Interface**: Benefit from a modern, accessible design suitable for all user groups.
+- **Integrated Booking Records**: Maintain a detailed booking history and manage upcoming trips with ease.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Why Choose SmartYatri?
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+SmartYatri is engineered to streamline passenger management, optimize route planning, and eliminate inefficiencies associated with traditional ticketing methods. With its advanced features and intuitive workflow, SmartYatri supports transportation providers and travelers in achieving a more organized and productive commuting experience.
