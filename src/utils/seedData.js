@@ -1,18 +1,26 @@
 // src/utils/seedData.js
 import prisma from '@/lib/prisma';
 
-// IMPORTANT:
-// Seeding (DB writes) should NEVER run at build time.
-// This function is safe ONLY to run in development or with manual invocation (ex: prisma/seed.js).
+let hasSeeded = false; // Prevents seed from running twice in same runtime
 
 export async function seedRoleData() {
-  // Only allow seeding in development, for safety!
-  if (process.env.NODE_ENV !== 'development') {
-    console.warn('🌱 Skipping seedRoleData: Not in development environment');
-    return;
+  if (hasSeeded) return;
+
+  // --- CHECK IF ALREADY SEEDED ---
+  const alreadySeeded = await prisma.role.findFirst({
+    where: { name: "ADMIN" }
+  });
+
+  const alreadyPermission = await prisma.permissionCatalog.findFirst({
+    where: { code: "PERM_MANAGE_USERS" }
+  });
+
+  if (alreadySeeded && alreadyPermission) {
+    hasSeeded = true;
+    return; // Database already contains initial seed
   }
 
-  // --- Permissions Catalog (seed if not present) ---
+  // --- PERMISSIONS (SAFE INSERT) ---
   const permissionsData = [
     {
       code: 'PERM_MANAGE_USERS',
@@ -46,15 +54,14 @@ export async function seedRoleData() {
       route: '/admin/passes',
       active: true,
     }
-    // ... add more as desired
   ];
 
   await prisma.permissionCatalog.createMany({
     data: permissionsData,
-    skipDuplicates: true, // Skip permissions that already exist
+    skipDuplicates: true, // prevents re-insert
   });
 
-  // --- Roles (seed if not present) ---
+  // --- ROLES (SAFE INSERT) ---
   const rolesData = [
     { name: "ADMIN", description: "System Administrator", isDefault: false, type: "admin" },
     { name: "STAFF", description: "School or Bus Staff", isDefault: false, type: "staff" },
@@ -65,47 +72,55 @@ export async function seedRoleData() {
 
   await prisma.role.createMany({
     data: rolesData,
-    skipDuplicates: true, // Skip roles that already exist
+    skipDuplicates: true,
   });
 
-  // Fetch roles and permissions by their current state
+  // --- FETCH CURRENT ROLES & PERMISSIONS ---
   const roles = await prisma.role.findMany();
   const permissions = await prisma.permissionCatalog.findMany();
 
-  // --- RolePermission relations (insert if not present) ---
+  // MAP roleName → permissionCodes
   const rolePermissionMap = {
-    'ADMIN': ['PERM_MANAGE_USERS', 'PERM_VIEW_REPORTS', 'PERM_MANAGE_PASSES', 'PERM_BOOK_PASS'],
-    'STAFF': ['PERM_VIEW_REPORTS', 'PERM_MANAGE_PASSES'],
-    'STUDENT': ['PERM_BOOK_PASS'],
-    'OFFICER': [],
-    'CONDUCTOR': [],
+    ADMIN: ['PERM_MANAGE_USERS', 'PERM_VIEW_REPORTS', 'PERM_MANAGE_PASSES', 'PERM_BOOK_PASS'],
+    STAFF: ['PERM_VIEW_REPORTS', 'PERM_MANAGE_PASSES'],
+    STUDENT: ['PERM_BOOK_PASS'],
+    OFFICER: [],
+    CONDUCTOR: [],
   };
 
-  const existingRolePermissions = await prisma.rolePermission.findMany();
-  const existingRolePermissionKeys = new Set(
-    existingRolePermissions.map(rp => `${rp.roleId}_${rp.permissionId}`)
-  );
+  // Build list of missing role-permission pairs
+  const rolePermissionInsert = [];
 
-  const rolePermissionData = [];
   for (const role of roles) {
     const allowedCodes = rolePermissionMap[role.name] || [];
-    const allowedPerms = permissions.filter(p => allowedCodes.includes(p.code));
-    for (const perm of allowedPerms) {
-      const key = `${role.id}_${perm.id}`;
-      if (!existingRolePermissionKeys.has(key)) {
-        rolePermissionData.push({
+    for (const code of allowedCodes) {
+      const perm = permissions.find(p => p.code === code);
+      if (!perm) continue;
+
+      // Check if relation already exists
+      const exists = await prisma.rolePermission.findFirst({
+        where: {
+          roleId: role.id,
+          permissionId: perm.id,
+        }
+      });
+
+      if (!exists) {
+        rolePermissionInsert.push({
           roleId: role.id,
           permissionId: perm.id,
         });
       }
     }
   }
-  if (rolePermissionData.length > 0) {
+
+  if (rolePermissionInsert.length > 0) {
     await prisma.rolePermission.createMany({
-      data: rolePermissionData,
+      data: rolePermissionInsert,
       skipDuplicates: true,
     });
   }
 
-  console.log(`✅ Seeded Roles/Permissions/RolePermissions (without deleting existing data)`);
+  hasSeeded = true;
+  console.log("✅ Roles & Permissions seeded safely (no duplicates)");
 }
