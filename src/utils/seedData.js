@@ -1,7 +1,17 @@
 // src/utils/seedData.js
 import prisma from '@/lib/prisma';
 
+// IMPORTANT:
+// Seeding (DB writes) should NEVER run at build time.
+// This function is safe ONLY to run in development or with manual invocation (ex: prisma/seed.js).
+
 export async function seedRoleData() {
+  // Only allow seeding in development, for safety!
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('🌱 Skipping seedRoleData: Not in development environment');
+    return;
+  }
+
   // --- Permissions Catalog (seed if not present) ---
   const permissionsData = [
     {
