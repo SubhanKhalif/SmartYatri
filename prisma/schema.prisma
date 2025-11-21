@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////
+//  ROLE & PERMISSION MODELS
+//////////////////////////////
+
+model PermissionCatalog {
+  id                    Int                     @id @default(autoincrement())
+  code                  String                  @unique
+  title                 String
+  category              String
+  type                  String?
+  route                 String
+  active                Boolean                 @default(true)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  rolePermissions       RolePermission[]
+  userCustomPermissions UserCustomPermission[]
+}
+
+model Role {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  description     String?
+  isDefault       Boolean           @default(false)
+  type            String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  rolePermissions RolePermission[]
+  userLogins      UserLogin[]
+}
+
+model RolePermission {
+  id            Int                @id @default(autoincrement())
+  roleId        Int
+  role          Role               @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permissionId  Int
+  permission    PermissionCatalog  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+//////////////////////////////
+//    USER LOGIN MODEL
+//////////////////////////////
+
+model UserLogin {
+  id         Int      @id @default(autoincrement())
+  username   String   @unique
+  password   String
+  email      String?
+  lastLogin  DateTime?
+
+  // STUDENT | STAFF | OFFICER | CONDUCTOR | ADMIN
+  loginType  String
+
+  // Role relation
+  roleId     Int?
+  assignedRole Role? @relation(fields: [roleId], references: [id])
+
+  // Profile (One to One)
+  profile    UserProfile?
+
+  // Sessions
+  sessions               Session[]
+  resetPasswordOtps      PasswordResetOtp[]
+  customPermissions      UserCustomPermission[]
+
+  // User actions
+  passes     Pass[]
+  bookings   Booking[]
+  payments   Payment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+//////////////////////////////
+//   USER PROFILE (NEW)
+//////////////////////////////
+
+model UserProfile {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @unique
+  user         UserLogin  @relation(fields: [userId], references: [id])
+
+  fullName     String
+  schoolName   String?
+  roleType     String     // STUDENT or STAFF
+  idNumber     String?    // studentId or staffId
+  classOrPosition String? // Grade or Staff Position
+  photo        String?    // profile image URL
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+//////////////////////////////
+// SESSION TABLE
+//////////////////////////////
+
+model Session {
+  id        Int       @id @default(autoincrement())
+  token     String    @unique
+  userId    Int
+  user      UserLogin @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  lastUsed  DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+//////////////////////////////
+// PASSWORD RESET OTP
+//////////////////////////////
+
+model PasswordResetOtp {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  user          UserLogin @relation(fields: [userId], references: [id])
+
+  email         String
+  otp           String
+  expiresAt     DateTime
+  used          Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+//////////////////////////////
+// CUSTOM PERMISSIONS
+//////////////////////////////
+
+model UserCustomPermission {
+  id             Int                @id @default(autoincrement())
+  userId         Int
+  user           UserLogin          @relation(fields: [userId], references: [id])
+
+  permissionId   Int
+  permission     PermissionCatalog  @relation(fields: [permissionId], references: [id])
+
+  allow          Boolean            @default(true)
+}
+
+//////////////////////////////
+// PASS SYSTEM MODELS
+//////////////////////////////
+
+enum PassStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Pass {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  user         UserLogin  @relation(fields: [userId], references: [id])
+
+  passCode     String     @unique
+  type         String
+  status       PassStatus @default(PENDING)
+
+  startDate    DateTime
+  endDate      DateTime
+
+  payments     Payment[]
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+//////////////////////////////
+// PAYMENT SYSTEM
+//////////////////////////////
+
+model Payment {
+  id           Int            @id @default(autoincrement())
+
+  userId       Int
+  user         UserLogin      @relation(fields: [userId], references: [id])
+
+  passId       Int?
+  pass         Pass?          @relation(fields: [passId], references: [id])
+
+  amount       Int
+  status       PaymentStatus  @default(PENDING)
+  method       String?
+  reference    String?
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+//////////////////////////////
+// BUS & BOOKING
+//////////////////////////////
+
+model Bus {
+  id             Int       @id @default(autoincrement())
+  numberPlate    String    @unique
+  from           String
+  to             String
+  departureTime  DateTime
+  arrivalTime    DateTime
+  totalSeats     Int
+
+  bookings       Booking[]
+}
+
+model Booking {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  user      UserLogin  @relation(fields: [userId], references: [id])
+
+  busId     Int
+  bus       Bus        @relation(fields: [busId], references: [id])
+
+  seatNo    String
+  bookedAt  DateTime   @default(now())
+}
