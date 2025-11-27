@@ -11,13 +11,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// Allow credentials and restrict origin for CORS
+// CORS: Allow both local development and deployed frontend
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://smart-yatri.vercel.app"
+];
+
+// Dynamic CORS origin function
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps, curl, or SSR)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      // Optionally, block/allow all or return an error
+      return callback(new Error("Not allowed by CORS"), false);
+    },
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
