@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { qrService } from '../../services/qrService';
 import { routeService } from '../../services/routeService';
 
@@ -9,19 +9,17 @@ export default function ConductorScanner() {
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const html5QrcodeRef = useRef(null);
+  const scannerRef = useRef(null);
+  const html5QrcodeScannerRef = useRef(null);
 
   useEffect(() => {
     loadRoutes();
-    // Cleanup scanner on unmount
+    startScanner();
     return () => {
-      if (html5QrcodeRef.current) {
-        html5QrcodeRef.current.stop().catch(() => {});
-        html5QrcodeRef.current.clear();
+      if (html5QrcodeScannerRef.current) {
+        html5QrcodeScannerRef.current.clear();
       }
     };
-    // eslint-disable-next-line
   }, []);
 
   const loadRoutes = async () => {
@@ -36,25 +34,7 @@ export default function ConductorScanner() {
     }
   };
 
-  // Professional scan: QR capture, then close and fetch info
-  const startProfessionalScan = async () => {
-    setScanResult(null);
-    setError('');
-    setLoading(false);
-
-    // Clean up any previous scanner
-    if (html5QrcodeRef.current) {
-      try {
-        await html5QrcodeRef.current.stop();
-      } catch {}
-      try {
-        await html5QrcodeRef.current.clear();
-      } catch {}
-      html5QrcodeRef.current = null;
-    }
-
-    setScanning(true);
-
+  const startScanner = () => {
     const config = {
       fps: 10,
       qrbox: { width: 300, height: 300 },
@@ -62,42 +42,27 @@ export default function ConductorScanner() {
       disableFlip: false,
     };
 
-    // Use new instance every scan for safety
-    if (!html5QrcodeRef.current) {
-      html5QrcodeRef.current = new Html5Qrcode("reader");
-    }
+    const scanner = new Html5QrcodeScanner('reader', config, false);
+    html5QrcodeScannerRef.current = scanner;
 
-    try {
-      await html5QrcodeRef.current.start(
-        { facingMode: 'environment' },
-        config,
-        async (decodedText /*, decodedResult*/) => {
-          // Stop scanning immediately after first successful result
-          setScanning(false);
-          try {
-            await html5QrcodeRef.current.stop();
-          } catch {}
-          try {
-            await html5QrcodeRef.current.clear();
-          } catch {}
-          await handleScanSuccess(decodedText);
-        },
-        (/* errorMessage */) => {
-          // Failure callback can be left empty (do nothing)
-        }
-      );
-    } catch (err) {
-      setError("Camera start failed: " + (err.message || err));
-      setScanning(false);
-    }
+    scanner.render(
+      (decodedText) => {
+        handleScanSuccess(decodedText);
+      },
+      (errorMessage) => {
+        // Error handling is done in onScanFailure callback
+      }
+    );
   };
 
   const handleScanSuccess = async (qrId) => {
     if (loading) return;
-    setLoading(true);
-    setScanResult(null);
-    setError('');
+
     try {
+      setLoading(true);
+      setError('');
+      setScanResult(null);
+
       const routeId = selectedRoute?.id || null;
       const res = await qrService.verifyQR(qrId, routeId);
 
@@ -105,10 +70,20 @@ export default function ConductorScanner() {
         qrId,
         ...res,
       });
+
+      // Continue scanning after a delay
+      setTimeout(() => {
+        setScanResult(null);
+        setLoading(false);
+      }, 3000);
     } catch (err) {
       setError(err.message || 'Failed to verify QR code');
+      setLoading(false);
+      setTimeout(() => {
+        setError('');
+        setScanResult(null);
+      }, 3000);
     }
-    setLoading(false);
   };
 
   const getStatusDisplay = () => {
@@ -181,7 +156,7 @@ export default function ConductorScanner() {
     return (
       <div className="bg-gray-100 border-4 border-gray-300 rounded-lg p-6 text-center">
         <p className="text-xl font-semibold text-gray-600">Ready to Scan</p>
-        <p className="text-sm text-gray-500 mt-2">Press the Scan button to capture QR code</p>
+        <p className="text-sm text-gray-500 mt-2">Point camera at QR code</p>
       </div>
     );
   };
@@ -201,7 +176,6 @@ export default function ConductorScanner() {
               setSelectedRoute(route);
             }}
             className="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600"
-            disabled={scanning || loading}
           >
             {routes.map((route) => (
               <option key={route.id} value={route.id}>
@@ -214,15 +188,7 @@ export default function ConductorScanner() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Scanner */}
           <div className="bg-white rounded-lg p-4">
-            {/* Scan button */}
-            <button
-              className={`w-full mb-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-60`}
-              onClick={startProfessionalScan}
-              disabled={scanning || loading}
-            >
-              {scanning ? 'Scanning...' : 'Scan QR Code'}
-            </button>
-            <div id="reader" className={scanning ? 'w-full h-72' : 'w-full h-72 opacity-50 pointer-events-none'}></div>
+            <div id="reader" className="w-full"></div>
           </div>
 
           {/* Status Display */}
@@ -232,7 +198,8 @@ export default function ConductorScanner() {
         {/* Instructions */}
         <div className="bg-blue-900 rounded-lg p-4 text-center">
           <p className="text-sm">
-            <strong>Instructions:</strong> Select the route, then press <b>Scan QR Code</b> and capture the passenger's QR code. The system will verify if they have a valid ticket or pass. Camera will close after scanning.
+            <strong>Instructions:</strong> Select the route, then scan the passenger's QR code. The
+            system will verify if they have a valid ticket or pass.
           </p>
         </div>
       </div>

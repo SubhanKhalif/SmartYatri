@@ -11,28 +11,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS: Allow both local development and deployed frontend
+// CORS configuration
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://smart-yatri.vercel.app"
+  'http://localhost:5173',
+  'https://your-vercel-app.vercel.app', // Replace with your Vercel app URL
+  'https://your-render-app.onrender.com' // Replace with your Render app URL
 ];
 
-// Dynamic CORS origin function
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps, curl, or SSR)
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      
+      if (allowedOrigins.includes(origin) || 
+          process.env.NODE_ENV === 'development' || 
+          origin.endsWith('.vercel.app') || 
+          origin.endsWith('.onrender.com')) {
         return callback(null, true);
       }
-      // Optionally, block/allow all or return an error
-      return callback(new Error("Not allowed by CORS"), false);
+      
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
     },
     credentials: true,
+    exposedHeaders: ['set-cookie'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
   })
 );
-
 app.use(express.json());
 app.use(cookieParser());
 

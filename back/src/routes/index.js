@@ -80,10 +80,8 @@ router.use("/tickets/list", listTicketsRoute);
 import createPassRoute from "./passes/create-pass.js";
 import userPassRoute from "./passes/user-pass.js";
 import approvePassRoute from "./passes/approve-pass.js";
-import allPassesRoute from "./passes/allpasses.js";
 router.use("/passes/create", createPassRoute);
 router.use("/passes/user", userPassRoute);
-router.use("/passes/all", allPassesRoute); // <----- Added new /passes/all route
 router.use("/passes", approvePassRoute);
 
 // Notification routes
@@ -92,7 +90,7 @@ router.use("/notifications", notificationsRoute);
 
 // Route management
 import routesManagementRoute from "./routes/list-routes.js";
-router.use("/routes/list", routesManagementRoute);
+router.use("/routes", routesManagementRoute);
 
 // Travel history
 import travelHistoryRoute from "./travel-history/list.js";

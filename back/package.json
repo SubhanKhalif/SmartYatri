@@ -6,7 +6,7 @@
   "scripts": {
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "dev": "node server.js",
+    "dev": "nodemon server.js",
     "build": "echo 'No build step necessary for Node.js backend'",
     "start": "node server.js",
     "postinstall": "prisma generate",

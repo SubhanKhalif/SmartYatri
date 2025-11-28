@@ -1,17 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+
+// Correct import path for Forgatepass
 import Forgatepass from "../components/forgatepass/forgatepass.jsx";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "";
-
-// Define roles for navigation as per provided mapping
-const rolesData = [
-  { name: "ADMIN", description: "System Administrator", isDefault: false, type: "admin" },
-  { name: "STAFF", description: "School or Bus Staff", isDefault: false, type: "staff" },
-  { name: "STUDENT", description: "Student User", isDefault: true, type: "student" },
-  { name: "OFFICER", description: "Officer/Checker", isDefault: false, type: "officer" },
-  { name: "CONDUCTOR", description: "Conductor", isDefault: false, type: "conductor" },
-];
 
 function getLabelClass(value, isFocused) {
   return [
@@ -20,27 +13,6 @@ function getLabelClass(value, isFocused) {
       ? "-top-5 text-xs text-blue-600 font-bold"
       : "top-3 text-base"
   ].join(" ");
-}
-
-// Role-to-routing mapping, OFFICER is a MANAGER
-function roleToRoute(roleName) {
-  switch (roleName) {
-    case "STUDENT":
-      return "/student/dashboard";
-    case "CONDUCTOR":
-      return "/conductor/scanner";
-    case "MANAGER":
-      return "/manager/dashboard";
-    case "ADMIN":
-      return "/admin/dashboard";
-    case "STAFF":
-      return "/faculty/dashboard";
-    case "OFFICER":
-      // Officer is a manager, so route to manager dashboard
-      return "/manager/dashboard";
-    default:
-      return "/";
-  }
 }
 
 export default function LoginPage() {
@@ -130,27 +102,24 @@ export default function LoginPage() {
 
       setSuccess("Login successful!");
 
-      // Find the user's role
+      // Role-based navigation
       const user = data.user ?? data;
-      // Prefer user.role.name, then fallback to user.loginType (for compatibility)
-      let roleName = "";
-      if (user.role && user.role.name) {
-        roleName = user.role.name;
-      } else if (user.loginType) {
-        // Sometimes backend sends "loginType": "STUDENT"/"ADMIN"/etc.
-        roleName = user.loginType;
-      }
-      // Check with rolesData for case consistency (could be lower/upper)
-      roleName = (rolesData.find(r => r.name === roleName) || {}).name || roleName;
+      const roleName = user.role?.name || user.loginType || "";
 
-      // Officer is a manager, treat OFFICER as MANAGER for routing
-      if (roleName === "OFFICER") {
-        roleName = "OFFICER";
+      // Route based on role
+      if (roleName === "STUDENT" || user.loginType === "STUDENT") {
+        navigate("/student/dashboard", { replace: true });
+      } else if (roleName === "CONDUCTOR" || user.loginType === "CONDUCTOR") {
+        navigate("/conductor/scanner", { replace: true });
+      } else if (roleName === "MANAGER" || user.loginType === "MANAGER") {
+        navigate("/manager/dashboard", { replace: true });
+      } else if (roleName === "ADMIN" || user.loginType === "ADMIN") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (roleName === "STAFF" || user.loginType === "STAFF") {
+        navigate("/faculty/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
       }
-
-      // Navigate to the mapped route
-      const destination = roleToRoute(roleName);
-      navigate(destination, { replace: true });
 
     } catch (err) {
       console.error("Login error:", err);
@@ -283,6 +252,7 @@ export default function LoginPage() {
             ) : "Login"}
           </button>
         </form>
+        {/* Signup navigation button */}
         <div className="flex justify-center mt-8">
           <span className="text-gray-700 text-base">Don&apos;t have an account?</span>
           <button
@@ -295,9 +265,11 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
+      {/* Forgatepass Modal */}
       {showForgatepass && (
         <Forgatepass open={showForgatepass} onClose={() => setShowForgatepass(false)} />
       )}
+      {/* Animations (TailwindCSS custom keyframes or use animate.css) */}
       <style>{`
         @keyframes fade-in {
           0% { opacity: 0; transform: translateY(16px);}

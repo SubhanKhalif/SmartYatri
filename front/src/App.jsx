@@ -19,7 +19,6 @@ import ManagerDashboard from "./pages/manager/Dashboard";
 import ApprovePasses from "./pages/manager/ApprovePasses";
 import ManageRoutes from "./pages/manager/ManageRoutes";
 import Reports from "./pages/manager/Reports";
-import Passes from "./pages/manager/Passes"; // <-- New passes page for manager
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -54,7 +53,6 @@ function App() {
         {/* Manager routes */}
         <Route path="/manager/dashboard" element={<ManagerDashboard />} />
         <Route path="/manager/approve-passes" element={<ApprovePasses />} />
-        <Route path="/manager/passes" element={<Passes />} /> {/* New Passes route */}
         <Route path="/manager/routes" element={<ManageRoutes />} />
         <Route path="/manager/reports" element={<Reports />} />
         

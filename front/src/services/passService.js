@@ -44,15 +44,4 @@ export const passService = {
     if (!data.success) throw new Error(data.error);
     return data;
   },
-
-  // Fetch all passes for manager (with or without filters at API)
-  async getAllPasses() {
-    const res = await fetch(`${SERVER_URL}/api/passes/all`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    return data;
-  },
 };
