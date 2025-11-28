@@ -45,9 +45,8 @@ export const passService = {
     return data;
   },
 
-  // NEW: Get all passes for manager (with or without filters at API)
+  // Fetch all passes for manager (with or without filters at API)
   async getAllPasses() {
-    // Optionally allow for filter params in future
     const res = await fetch(`${SERVER_URL}/api/passes/all`, {
       method: 'GET',
       credentials: 'include',
