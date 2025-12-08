@@ -13,7 +13,7 @@ router.use((req, res, next) => {
 
 /**
  * Login API: Accepts username & password. 
- * - On success: issues session cookie and returns user+role info.
+ * - On success: returns token in response (for storage in localStorage) and user+role info.
  * - Session is single-use: removes previous sessions.
  */
 router.post('/', async (req, res) => {
@@ -96,18 +96,13 @@ router.post('/', async (req, res) => {
       // Add additional info here if needed (e.g., permissions later)
     };
 
-    // Issue session cookie (secure, httpOnly, 1hr expiry)
-    res.cookie('sessionToken', rawToken, {
-      httpOnly: true,
-      path: '/',
-      sameSite: 'lax',
-      secure: true,
-      maxAge: 60 * 60 * 1000, // 1 hour in ms
-    });
+    // DO NOT issue httpOnly session cookie. Instead, return token in response.
+    // Client must save the returned token in localStorage and send it as needed.
 
     return res.json({
       success: true,
       user: safeUser,
+      token: rawToken, // send this token - client should store into localStorage
     });
 
   } catch (err) {
