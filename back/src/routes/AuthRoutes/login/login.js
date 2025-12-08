@@ -96,13 +96,22 @@ router.post('/', async (req, res) => {
       // Add additional info here if needed (e.g., permissions later)
     };
 
-    // DO NOT issue httpOnly session cookie. Instead, return token in response.
-    // Client must save the returned token in localStorage and send it as needed.
+    // Set httpOnly session cookie for secure token storage
+    // Also return token in response for client-side storage as backup
+    // eslint-disable-next-line no-undef
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('sessionToken', rawToken, {
+      httpOnly: true,
+      secure: isProduction, // Only use secure cookies in production (HTTPS)
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 1000, // 1 hour in ms
+    });
 
     return res.json({
       success: true,
       user: safeUser,
-      token: rawToken, // send this token - client should store into localStorage
+      token: rawToken, // send this token - client can store in localStorage as backup
     });
 
   } catch (err) {

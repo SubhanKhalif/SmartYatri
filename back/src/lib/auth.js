@@ -2,22 +2,30 @@ import prisma from './prisma.js';
 import crypto from 'crypto';
 
 /**
- * Validate session token from cookie (Node.js/Express version)
+ * Validate session token from cookie or Authorization header (Node.js/Express version)
  * @param {import('express').Request} req
  * @returns {Promise<{user: object, session: object}>} - throws Error on failure
  */
 export async function validateSession(req) {
-  // Express cookies middleware puts cookies on req.cookies directly
-  const cookieToken = req.cookies?.sessionToken;
+  // Try to get token from cookie first, then from Authorization header
+  let rawToken = req.cookies?.sessionToken;
+  
+  // If no cookie, check Authorization header (Bearer token)
+  if (!rawToken) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      rawToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
+  }
 
-  if (!cookieToken) {
+  if (!rawToken) {
     const error = new Error('Unauthorized: No session token.');
     error.status = 401;
     throw error;
   }
 
   // Hash token to match DB storage
-  const hashedToken = crypto.createHash('sha256').update(cookieToken).digest('hex');
+  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
   const session = await prisma.session.findUnique({
     where: { token: hashedToken },
