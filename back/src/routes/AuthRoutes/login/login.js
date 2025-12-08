@@ -97,12 +97,17 @@ router.post('/', async (req, res) => {
     };
 
     // Issue session cookie (secure, httpOnly, 1hr expiry)
+    // Use 'none' for cross-origin cookies (required for Render/Vercel deployments)
+    // Use 'lax' for same-origin (development)
+    // eslint-disable-next-line no-undef
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('sessionToken', rawToken, {
       httpOnly: true,
       path: '/',
-      sameSite: 'lax',
-      secure: true,
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: true, // Required for sameSite: 'none'
       maxAge: 60 * 60 * 1000, // 1 hour in ms
+      // Don't set domain - let browser handle it automatically
     });
 
     return res.json({

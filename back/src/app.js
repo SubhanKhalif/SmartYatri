@@ -17,10 +17,14 @@ app.use((req, res, next) => {
 });
 
 // Allow credentials and dynamic origin for CORS
+// eslint-disable-next-line no-undef
 const allowedOrigins = [
   "http://localhost:5173",
   "https://smart-yatri.vercel.app",
-];
+  // Add more frontend origins as needed
+  // eslint-disable-next-line no-undef
+  process.env.FRONTEND_URL, // Allow frontend URL from environment variable
+].filter(Boolean); // Remove undefined values
 
 app.use(
   cors({
@@ -29,9 +33,23 @@ app.use(
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
-      } else {
-        return callback(new Error("Not allowed by CORS"));
       }
+      // In production, be more permissive for Render/Vercel deployments
+      // Allow any HTTPS origin that matches common patterns
+      // eslint-disable-next-line no-undef
+      if (process.env.NODE_ENV === 'production') {
+        // Allow vercel.app, netlify.app, render.com, etc.
+        const allowedPatterns = [
+          /^https:\/\/.*\.vercel\.app$/,
+          /^https:\/\/.*\.netlify\.app$/,
+          /^https:\/\/.*\.onrender\.com$/,
+        ];
+        if (allowedPatterns.some(pattern => pattern.test(origin))) {
+          return callback(null, true);
+        }
+      }
+      console.warn(`CORS blocked origin: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
