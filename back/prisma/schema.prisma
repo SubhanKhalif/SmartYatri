@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -108,6 +108,11 @@ model UserProfile {
   idNumber     String?    // studentId or staffId
   classOrPosition String? // Grade or Staff Position
   photo        String?    // profile image URL
+  phone        String?
+  address      String?
+  guardianName String?
+  guardianPhone String?
+  bio          String?
   qrId         String?    @unique // Unique QR code ID for each user
 
   createdAt    DateTime   @default(now())
